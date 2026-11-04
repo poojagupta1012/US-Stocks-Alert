@@ -9,6 +9,8 @@ const SYMBOL_PATTERN = /^[A-Z0-9][A-Z0-9.:\-]{0,29}$/;
 // Numeric chat IDs (groups are negative) or @channelusername.
 const TELEGRAM_CHAT_ID_PATTERN = /^(-?\d+|@[A-Za-z0-9_]{5,})$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// MongoDB deletes triggered alerts this long after they fire. Active alerts have no triggeredAt, so they're kept.
+const TRIGGERED_ALERT_TTL = '2d';
 
 const notificationResultSchema = new mongoose.Schema(
   {
@@ -57,7 +59,7 @@ const alertSchema = new mongoose.Schema(
       lowercase: true,
       match: [EMAIL_PATTERN, 'Invalid email address'],
     },
-    triggeredAt: Date,
+    triggeredAt: { type: Date, expires: TRIGGERED_ALERT_TTL },
     triggeredPrice: Number,
     notifications: {
       telegram: notificationResultSchema,

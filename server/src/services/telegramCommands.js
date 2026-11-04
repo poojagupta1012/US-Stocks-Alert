@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 const Alert = require('../models/Alert');
+const { checkAlertLimits, MAX_ACTIVE_ALERTS_PER_RECIPIENT } = require('./alertLimits');
+const { FREE_TIER_SYMBOL_LIMIT } = require('./finnhubSocket');
 const {
   onTelegramCommand,
   onTelegramEvent,
@@ -32,6 +34,8 @@ const SUGGESTION_LIMIT = 6;
 const INLINE_RESULT_LIMIT = 10;
 // Telegram rejects callback_data longer than this.
 const MAX_CALLBACK_DATA_BYTES = 64;
+// Telegram's limit is 4096 characters; leave room for the entities it counts differently.
+const MAX_MESSAGE_LENGTH = 4000;
 
 const USAGE =
   'Usage: <b>/alert AAPL &gt; 200</b> or <b>/alert apple below 150</b>. Send just <b>/alert apple</b> to pick the stock first.';
@@ -54,10 +58,27 @@ function buildHelp(username) {
     '<b>/id</b> - show this chat\'s ID for the web form',
     '',
     'Alerts are shared: everyone using this bot sees and can delete all of them, but each alert only notifies the chat that set it.',
-    'Alerts are one-time: each one fires once and is then marked as triggered.',
+    'Alerts are one-time: each one fires once, and triggered alerts are deleted after 2 days.',
+    `Each chat can have up to ${MAX_ACTIVE_ALERTS_PER_RECIPIENT} active alerts, and ${FREE_TIER_SYMBOL_LIMIT} different stocks can be watched at once.`,
   ]
     .filter((line) => line !== null)
     .join('\n');
+}
+
+/** Joins lines into as few messages as fit Telegram's length limit, never splitting a line. */
+function splitIntoMessages(lines) {
+  const messages = [];
+  let current = '';
+  for (const line of lines) {
+    if (current && current.length + 1 + line.length > MAX_MESSAGE_LENGTH) {
+      messages.push(current);
+      current = line;
+    } else {
+      current = current ? `${current}\n${line}` : line;
+    }
+  }
+  if (current) messages.push(current);
+  return messages;
 }
 
 const shortId = (alert) => alert._id.toString().slice(-SHORT_ID_LENGTH);
@@ -97,6 +118,9 @@ function registerTelegramCommands({ cache, symbols }) {
 
   /** Creates the alert and returns the message to show: a confirmation or the validation error. */
   async function createAlert(chatId, symbol, target) {
+    const limitError = checkAlertLimits(cache, { symbol, telegramChatId: String(chatId) });
+    if (limitError) return `❌ ${escapeHtml(limitError)}`;
+
     let alert;
     try {
       alert = await Alert.create({
@@ -229,11 +253,17 @@ function registerTelegramCommands({ cache, symbols }) {
     if (alerts.length === 0) {
       return reply(msg, 'There are no active alerts. Create one with <b>/alert AAPL &gt; 200</b>');
     }
-    const lines = alerts.map((alert) => describe(alert, msg.chat.id));
-    return reply(
-      msg,
-      `🔔 <b>Active alerts (${alerts.length})</b>\n\n${lines.join('\n')}\n\nDelete one with <b>/delete &lt;id&gt;</b>`
-    );
+    const lines = [
+      `🔔 <b>Active alerts (${alerts.length})</b>`,
+      '',
+      ...alerts.map((alert) => describe(alert, msg.chat.id)),
+      '',
+      'Delete one with <b>/delete &lt;id&gt;</b>',
+    ];
+    // Sent in order, one at a time, so a long list arrives in sequence.
+    for (const text of splitIntoMessages(lines)) {
+      await reply(msg, text);
+    }
   });
 
   onTelegramCommand('delete', async (msg, args) => {

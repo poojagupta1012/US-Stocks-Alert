@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const Alert = require('../models/Alert');
+const { checkAlertLimits } = require('../services/alertLimits');
 
 const asyncHandler = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
@@ -17,14 +18,20 @@ function createAlertsRouter({ cache }) {
   router.post(
     '/',
     asyncHandler(async (req, res) => {
-      const { symbol, targetPrice, condition } = req.body || {};
+      const { targetPrice, condition } = req.body || {};
+      const symbol = optionalString(req.body?.symbol);
+      const telegramChatId = optionalString(req.body?.telegramChatId);
+      const emailAddress = optionalString(req.body?.emailAddress);
+
+      const limitError = checkAlertLimits(cache, { symbol, telegramChatId, emailAddress });
+      if (limitError) return res.status(409).json({ error: limitError });
 
       const alert = await Alert.create({
-        symbol: optionalString(symbol),
+        symbol,
         targetPrice: targetPrice === '' || targetPrice == null ? undefined : Number(targetPrice),
         condition,
-        telegramChatId: optionalString(req.body?.telegramChatId),
-        emailAddress: optionalString(req.body?.emailAddress),
+        telegramChatId,
+        emailAddress,
       });
 
       cache.add(alert);

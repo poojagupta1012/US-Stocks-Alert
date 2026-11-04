@@ -150,3 +150,4 @@ class FinnhubSocket extends EventEmitter {
 }
 
 module.exports = FinnhubSocket;
+module.exports.FREE_TIER_SYMBOL_LIMIT = FREE_TIER_SYMBOL_LIMIT;

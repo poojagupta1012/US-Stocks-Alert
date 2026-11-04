@@ -64,6 +64,10 @@ class AlertCache extends EventEmitter {
     return alerts ? Array.from(alerts.values()) : [];
   }
 
+  all() {
+    return Array.from(this.byId.values());
+  }
+
   symbols() {
     return Array.from(this.bySymbol.keys());
   }

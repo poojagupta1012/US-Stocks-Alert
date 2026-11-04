@@ -86,8 +86,8 @@ export default function Dashboard() {
       <section className="mt-8 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <h2 className="text-lg font-semibold">Alerts</h2>
-          <span className="text-sm text-slate-500">
-            {activeCount} active · {alerts.length - activeCount} triggered
+          <span className="text-sm text-slate-500" title="Triggered alerts are deleted 2 days after they fire">
+            {activeCount} active · {alerts.length - activeCount} triggered (kept 2 days)
           </span>
         </div>
         <AlertsTable alerts={alerts} loading={loading} onDelete={handleDelete} deletingId={deletingId} />

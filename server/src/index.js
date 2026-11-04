@@ -11,6 +11,7 @@ const AlertEngine = require('./services/alertEngine');
 const notifier = require('./services/notifier');
 const { initTelegram, isTelegramEnabled, stopTelegram } = require('./services/telegram');
 const { initEmail, isEmailEnabled } = require('./services/email');
+const registerTelegramCommands = require('./services/telegramCommands');
 
 async function main() {
   await connectDB(config.mongodbUri);
@@ -22,6 +23,7 @@ async function main() {
   const socket = new FinnhubSocket({ apiKey: config.finnhubApiKey });
   const engine = new AlertEngine({ cache, socket, notifier });
   await engine.start();
+  registerTelegramCommands({ cache });
 
   const app = express();
   app.use(cors({ origin: config.clientOrigins }));

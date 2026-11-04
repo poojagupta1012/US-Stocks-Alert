@@ -46,6 +46,19 @@ npm run dev             # http://localhost:3000
 ### 4. Find your Telegram chat ID
 Open your bot in Telegram and send `/start`. It replies with your chat ID, which goes in the alert form.
 
+## Telegram commands
+You can also manage alerts straight from the bot. Alerts created this way notify the chat they were created in.
+
+| Command | Description |
+|---|---|
+| `/alert AAPL > 200` | Alert when AAPL goes above $200. Use `<` for below; `above` / `below` also work. |
+| `/alerts` | List all active alerts, each with a short ID. Your own are marked "(yours)". |
+| `/delete <id>` | Delete any alert. |
+| `/help` | Show the commands. |
+| `/start`, `/id` | Show this chat's ID. |
+
+The commands need `TELEGRAM_POLLING=true`. Alerts are shared: everyone who uses the bot can list and delete every alert, including ones created in the web form. Each alert still only notifies the chat (or email) it was created with, and `/alerts` doesn't show other people's chat IDs or email addresses.
+
 ## API
 | Method | Path | Description |
 |---|---|---|

@@ -71,6 +71,8 @@ async function main() {
 
   const shutdown = async (signal) => {
     console.log(`[server] ${signal} received, shutting down`);
+    // Set first: stopTelegram() below can hang on a dead connection, and nothing after it would run.
+    setTimeout(() => process.exit(1), 10000).unref();
     socket.close();
     symbols.stop();
     await stopTelegram().catch(() => {});
@@ -78,7 +80,6 @@ async function main() {
       await mongoose.disconnect();
       process.exit(0);
     });
-    setTimeout(() => process.exit(1), 10000).unref();
   };
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('SIGTERM', () => shutdown('SIGTERM'));

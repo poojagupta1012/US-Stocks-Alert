@@ -2,6 +2,11 @@
 process.env.NTBA_FIX_319 = '1';
 const TelegramBot = require('node-telegram-bot-api');
 
+// The library sets no timeout, so after a network change (Wi-Fi switch, VPN, sleep) a long poll on
+// the dead connection never settles and the bot stops receiving commands. Must exceed the long-poll
+// timeout of 10s; on timeout the poll errors and is retried on a fresh connection.
+const REQUEST_TIMEOUT_MS = 30000;
+
 let bot = null;
 let isPolling = false;
 
@@ -11,7 +16,7 @@ function initTelegram({ token, polling }) {
     return;
   }
 
-  bot = new TelegramBot(token, { polling });
+  bot = new TelegramBot(token, { polling, request: { timeout: REQUEST_TIMEOUT_MS } });
   isPolling = Boolean(polling);
 
   if (polling) {

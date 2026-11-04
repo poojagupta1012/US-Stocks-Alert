@@ -52,6 +52,9 @@ You can also manage alerts straight from the bot. Alerts created this way notify
 | Command | Description |
 |---|---|
 | `/alert AAPL > 200` | Alert when AAPL goes above $200. Use `<` for below; `above` / `below` also work. |
+| `/alert apple < 150` | Company names and partial tickers work too: the bot replies with buttons of matching stocks, and tapping one creates the alert. |
+| `/alert tesla` | Without a target, pick the stock (if needed) and the bot asks you to reply with the target, e.g. `> 400`. |
+| `@YourBot nvidia` | Inline search: type the bot's username and a name or ticker in any chat's message box to see matching stocks as you type. Picking one sends `/alert NVDA` and the bot asks for the target. Needs inline mode turned on once: in @BotFather, send `/setinline`, pick the bot and enter a placeholder like `Search US stocks…`. |
 | `/alerts` | List all active alerts, each with a short ID. Your own are marked "(yours)". |
 | `/delete <id>` | Delete any alert. |
 | `/help` | Show the commands. |
@@ -65,6 +68,7 @@ The commands need `TELEGRAM_POLLING=true`. Alerts are shared: everyone who uses 
 | `POST` | `/api/alerts` | Body: `{ symbol, targetPrice, condition: "GREATER_THAN" \| "LESS_THAN", telegramChatId?, emailAddress? }`. At least one channel is required. |
 | `GET` | `/api/alerts` | Lists all alerts, newest first. Add `?status=ACTIVE` or `?status=TRIGGERED` to filter. |
 | `DELETE` | `/api/alerts/:id` | Deletes an alert. |
+| `GET` | `/api/symbols?q=apple` | Ticker autocomplete: up to 8 US symbols matching a ticker or company name, as `[{ symbol, name, type }]`. The server downloads Finnhub's US symbol list at startup and refreshes it daily, and answers `503` until the first download finishes. |
 | `GET` | `/api/health` | Database and Finnhub connection status, plus subscribed symbols. |
 
 ## Notes

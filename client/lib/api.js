@@ -25,3 +25,6 @@ export const createAlert = (alert) =>
 export const deleteAlert = (id) => request(`/api/alerts/${id}`, { method: 'DELETE' });
 
 export const getHealth = () => request('/api/health');
+
+export const searchSymbols = (query, { signal } = {}) =>
+  request(`/api/symbols?q=${encodeURIComponent(query)}`, { signal });

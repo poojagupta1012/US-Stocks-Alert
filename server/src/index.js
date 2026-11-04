@@ -5,8 +5,10 @@ const mongoose = require('mongoose');
 
 const connectDB = require('./config/db');
 const createAlertsRouter = require('./routes/alerts');
+const createSymbolsRouter = require('./routes/symbols');
 const AlertCache = require('./services/alertCache');
 const FinnhubSocket = require('./services/finnhubSocket');
+const SymbolDirectory = require('./services/symbolDirectory');
 const AlertEngine = require('./services/alertEngine');
 const notifier = require('./services/notifier');
 const { initTelegram, isTelegramEnabled, stopTelegram } = require('./services/telegram');
@@ -23,7 +25,11 @@ async function main() {
   const socket = new FinnhubSocket({ apiKey: config.finnhubApiKey });
   const engine = new AlertEngine({ cache, socket, notifier });
   await engine.start();
-  registerTelegramCommands({ cache });
+
+  // Loads in the background; autocomplete answers 503 (and the bot skips suggestions) until it's ready.
+  const symbols = new SymbolDirectory({ apiKey: config.finnhubApiKey });
+  symbols.load();
+  registerTelegramCommands({ cache, symbols });
 
   const app = express();
   app.use(cors({ origin: config.clientOrigins }));
@@ -35,12 +41,14 @@ async function main() {
       database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
       finnhub: socket.connected ? 'connected' : 'disconnected',
       activeAlerts: cache.size,
+      symbolDirectory: symbols.ready ? 'loaded' : 'loading',
       subscribedSymbols: cache.symbols(),
       channels: { telegram: isTelegramEnabled(), email: isEmailEnabled() },
     });
   });
 
   app.use('/api/alerts', createAlertsRouter({ cache }));
+  app.use('/api/symbols', createSymbolsRouter({ symbols }));
 
   app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 
@@ -64,6 +72,7 @@ async function main() {
   const shutdown = async (signal) => {
     console.log(`[server] ${signal} received, shutting down`);
     socket.close();
+    symbols.stop();
     await stopTelegram().catch(() => {});
     server.close(async () => {
       await mongoose.disconnect();

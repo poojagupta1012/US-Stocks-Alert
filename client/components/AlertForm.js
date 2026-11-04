@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createAlert } from '@/lib/api';
+import SymbolInput from './SymbolInput';
 
 const EMPTY_FORM = {
   symbol: '',
@@ -57,13 +58,10 @@ export default function AlertForm({ onCreated }) {
           <label htmlFor="symbol" className={labelClass}>
             Stock ticker
           </label>
-          <input
+          <SymbolInput
             id="symbol"
-            required
             value={form.symbol}
-            onChange={update('symbol')}
-            placeholder="AAPL"
-            autoComplete="off"
+            onChange={(symbol) => setForm((prev) => ({ ...prev, symbol }))}
             className={`${inputClass} uppercase`}
           />
         </div>

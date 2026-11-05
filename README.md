@@ -47,6 +47,9 @@ npm run dev             # http://localhost:3000
 ### 4. Find your Telegram chat ID
 Open your bot in Telegram and send `/start`. It replies with your chat ID, which goes in the alert form.
 
+### 5. Keep it running without your laptop (optional)
+See [deploy/oracle](deploy/oracle/README.md) to host the server for free on an Oracle Cloud VM.
+
 ## Telegram commands
 You can also manage alerts straight from the bot. Alerts created this way notify the chat they were created in.
 
